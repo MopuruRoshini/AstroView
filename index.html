@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>✨ ASTRALVIEW | Deep Space Observatory with 12 Planets</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Poppins', 'Inter', system-ui, -apple-system, 'Roboto', sans-serif;
+            background: radial-gradient(circle at 30% 10%, #03071e, #000000);
+            color: #fff0e0;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            position: relative;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            outline: none;
+        }
+
+        /* UI overlay - modern glass panel */
+        .ui-overlay {
+            position: absolute;
+            z-index: 20;
+            pointer-events: none;
+            width: 100%;
+            height: 100%;
+        }
+
+        .top-bar {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            pointer-events: none;
+        }
+
+        .logo {
+            background: rgba(10, 20, 40, 0.65);
+            backdrop-filter: blur(12px);
+            border-radius: 60px;
+            padding: 8px 22px;
+            border: 1px solid rgba(255, 215, 150, 0.3);
+            font-weight: 500;
+            letter-spacing: 1px;
+            font-size: 1.2rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            pointer-events: auto;
+        }
+        .logo span {
+            color: #ffcd7e;
+            font-weight: bold;
+        }
+
+        .controls-panel {
+            background: rgba(15, 25, 45, 0.7);
+            backdrop-filter: blur(16px);
+            border-radius: 48px;
+            padding: 8px 20px;
+            display: flex;
+            gap: 20px;
+            border: 1px solid rgba(255,255,200,0.2);
+            pointer-events: auto;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.4);
+        }
+
+        .ctrl-btn {
+            background: rgba(30, 45, 70, 0.8);
+            border: none;
+            color: #ffecb3;
+            font-size: 1.3rem;
+            cursor: pointer;
+            width: 42px;
+            height: 42px;
+            border-radius: 60px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(4px);
+            font-weight: bold;
+        }
+        .ctrl-btn:hover {
+            background: #ffaa44cc;
+            color: #0a0f1f;
+            transform: scale(1.07);
+            box-shadow: 0 0 12px rgba(255,180,70,0.6);
+        }
+
+        /* Enhanced Info Card - Planet Details */
+        .info-card {
+            position: absolute;
+            bottom: 25px;
+            left: 25px;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(16px);
+            border-radius: 28px;
+            padding: 20px 26px;
+            border-left: 5px solid #ffbb55;
+            width: 320px;
+            pointer-events: auto;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            box-shadow: 0 20px 35px -12px black;
+            z-index: 30;
+        }
+        .info-card h3 {
+            font-size: 1.4rem;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+            color: #ffdd99;
+        }
+        .info-card h4 {
+            font-size: 0.9rem;
+            color: #88aaff;
+            margin: 10px 0 5px 0;
+            border-bottom: 1px solid rgba(255,200,100,0.3);
+            padding-bottom: 3px;
+        }
+        .planet-detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 6px 0;
+            font-size: 0.85rem;
+        }
+        .planet-detail-label {
+            opacity: 0.7;
+        }
+        .planet-detail-value {
+            font-weight: 600;
+            color: #ffdd99;
+        }
+        .star-count {
+            margin-top: 12px;
+            font-size: 0.8rem;
+            display: flex;
+            gap: 12px;
+        }
+        .click-hint {
+            margin-top: 12px;
+            font-size: 0.7rem;
+            opacity: 0.6;
+            text-align: center;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            padding-top: 8px;
+        }
+
+        /* bottom right time */
+        .astro-meta {
+            position: absolute;
+            bottom: 25px;
+            right: 25px;
+            background: rgba(0,0,0,0.55);
+            backdrop-filter: blur(10px);
+            border-radius: 28px;
+            padding: 12px 20px;
+            text-align: right;
+            font-family: monospace;
+            letter-spacing: 1px;
+            pointer-events: none;
+            border: 1px solid rgba(255,200,100,0.3);
+        }
+        .time {
+            font-size: 1.2rem;
+            font-weight: 500;
+        }
+        .constellation {
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+
+        .hint {
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+            padding: 6px 14px;
+            border-radius: 60px;
+            font-size: 0.7rem;
+            pointer-events: none;
+            white-space: nowrap;
+            color: #ffdd99;
+        }
+
+        @media (max-width: 700px) {
+            .controls-panel { gap: 12px; padding: 6px 14px; }
+            .ctrl-btn { width: 36px; height: 36px; font-size: 1rem; }
+            .info-card { padding: 12px 18px; width: 280px; }
+            .logo { font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+<div id="canvas-container"></div>
+
+<div class="ui-overlay">
+    <div class="top-bar">
+        <div class="logo">✨ <span>ASTRAVIEW</span> · 12 worlds orbiting</div>
+        <div class="controls-panel">
+            <button class="ctrl-btn" id="btn-auto">🌀 Auto</button><br>
+            <button class="ctrl-btn" id="btn-reset">🎯 Reset</button><br>
+            <button class="ctrl-btn" id="btn-toggle-stars">⭐ Twinkle</button><br>
+        </div>
+    </div>
+    <div class="info-card" id="infoCard">
+        <h3 id="planetNameTitle">🌌 Celestial Vista</h3>
+        <div id="defaultInfo">
+            <p>Interactive 3D starfield • Nebula glow • 12 Dynamic planets & orbits • Real-time animations</p>
+            <div class="star-count">
+                <span>✨ <span id="starCount">0</span> stars visible</span>
+                <span>🪐 12 wandering worlds</span>
+            </div>
+            <p style="margin-top: 8px;">🎮 Drag to rotate • Scroll to zoom</p>
+            <p style="margin-top: 8px; color:#ffaa88;">🪐 CLICK ON ANY PLANET FOR DETAILS</p>
+        </div>
+        <div id="planetDetails" style="display: none;">
+            <div class="planet-detail-row"><span class="planet-detail-label">📡 Distance from Star:</span><span class="planet-detail-value" id="detailDist">-- AU</span></div>
+            <div class="planet-detail-row"><span class="planet-detail-label">🌍 Radius:</span><span class="planet-detail-value" id="detailRadius">-- km</span></div>
+            <div class="planet-detail-row"><span class="planet-detail-label">🌡️ Surface Temp:</span><span class="planet-detail-value" id="detailTemp">-- K</span></div>
+            <div class="planet-detail-row"><span class="planet-detail-label">🪐 Mass (Earth=1):</span><span class="planet-detail-value" id="detailMass">--</span></div>
+            <div class="planet-detail-row"><span class="planet-detail-label">💨 Atmosphere:</span><span class="planet-detail-value" id="detailAtmo">--</span></div>
+            <div class="planet-detail-row"><span class="planet-detail-label">🛰️ Orbital Period:</span><span class="planet-detail-value" id="detailPeriod">-- days</span></div>
+            <div class="planet-detail-row"><span class="planet-detail-label">🔆 Habitability:</span><span class="planet-detail-value" id="detailHab">--</span></div>
+            <div class="click-hint">✨ Click another planet to explore</div>
+        </div>
+    </div>
+    <div class="astro-meta">
+        <div class="time" id="liveTime">--:--:--</div>
+        <div class="constellation">🌠 deep space observatory</div>
+    </div>
+    <div class="hint">💫 12 planets • Click for details • Animated aurora</div>
+</div>
+
+<script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+        }
+    }
+</script>
+
+<script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+    import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+    
+    // --- setup scene, camera, renderer ---
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x01011a);
+    scene.fog = new THREE.FogExp2(0x01011a, 0.0005);
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2500);
+    camera.position.set(18, 8, 24);
+    camera.lookAt(0, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.toneMapping = THREE.ReinhardToneMapping;
+    renderer.toneMappingExposure = 1.2;
+    container.appendChild(renderer.domElement);
+
+    // Postprocessing bloom
+    const renderScene = new RenderPass(scene, camera);
+    const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.2, 0.3, 0.85);
+    bloomPass.threshold = 0.1;
+    bloomPass.strength = 0.65;
+    const effectComposer = new EffectComposer(renderer);
+    effectComposer.addPass(renderScene);
+    effectComposer.addPass(bloomPass);
+
+    // Controls
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.6;
+    controls.enableZoom = true;
+    controls.zoomSpeed = 1.2;
+    controls.enablePan = true;
+    controls.panSpeed = 0.8;
+    controls.maxPolarAngle = Math.PI / 1.7;
+    controls.target.set(0, 0.5, 0);
+    
+    // UI elements
+    const autoBtn = document.getElementById('btn-auto');
+    const resetBtn = document.getElementById('btn-reset');
+    const toggleStarsBtn = document.getElementById('btn-toggle-stars');
+    const starCountSpan = document.getElementById('starCount');
+    const liveTimeSpan = document.getElementById('liveTime');
+    const planetNameTitle = document.getElementById('planetNameTitle');
+    const defaultInfoDiv = document.getElementById('defaultInfo');
+    const planetDetailsDiv = document.getElementById('planetDetails');
+    
+    // Detail spans
+    const detailDist = document.getElementById('detailDist');
+    const detailRadius = document.getElementById('detailRadius');
+    const detailTemp = document.getElementById('detailTemp');
+    const detailMass = document.getElementById('detailMass');
+    const detailAtmo = document.getElementById('detailAtmo');
+    const detailPeriod = document.getElementById('detailPeriod');
+    const detailHab = document.getElementById('detailHab');
+    
+    let starTwinkleEnabled = true;
+    
+    function updateClock() {
+        const now = new Date();
+        liveTimeSpan.textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute:'2-digit', second:'2-digit' });
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+    
+    function showPlanetInfo(planet) {
+        planetNameTitle.textContent = planet.name;
+        defaultInfoDiv.style.display = 'none';
+        planetDetailsDiv.style.display = 'block';
+        detailDist.textContent = `${planet.distance} AU`;
+        detailRadius.textContent = `${(planet.radius * 7000).toFixed(0)} km`;
+        detailTemp.textContent = `${planet.temp} K`;
+        detailMass.textContent = planet.mass.toFixed(2);
+        detailAtmo.textContent = planet.atmosphere;
+        detailPeriod.textContent = `${planet.orbitalPeriod} days`;
+        detailHab.textContent = planet.habitable ? "✅ Potential" : "❌ Hostile";
+    }
+    
+    function resetToDefaultInfo() {
+        planetNameTitle.textContent = "🌌 Celestial Vista";
+        defaultInfoDiv.style.display = 'block';
+        planetDetailsDiv.style.display = 'none';
+    }
+    
+    // --- 1: Massive Starfield (12,000 stars) ---
+    const starCount = 12000;
+    const starGeometry = new THREE.BufferGeometry();
+    const starPositions = new Float32Array(starCount * 3);
+    const starColors = new Float32Array(starCount * 3);
+    
+    for (let i = 0; i < starCount; i++) {
+        const radius = 200 + Math.random() * 600;
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        const x = radius * Math.sin(phi) * Math.cos(theta);
+        const y = radius * Math.sin(phi) * Math.sin(theta) * 0.6;
+        const z = radius * Math.cos(phi);
+        starPositions[i*3] = x;
+        starPositions[i*3+1] = y * 0.8;
+        starPositions[i*3+2] = z;
+        
+        const colorChoice = Math.random();
+        let r, g, b;
+        if (colorChoice < 0.7) {
+            r = 0.9 + Math.random()*0.3;
+            g = 0.8 + Math.random()*0.4;
+            b = 0.7 + Math.random()*0.5;
+        } else if (colorChoice < 0.85) {
+            r = 1.0;
+            g = 0.6 + Math.random()*0.3;
+            b = 0.4 + Math.random()*0.3;
+        } else {
+            r = 0.5 + Math.random()*0.4;
+            g = 0.6 + Math.random()*0.4;
+            b = 1.0;
+        }
+        starColors[i*3] = r;
+        starColors[i*3+1] = g;
+        starColors[i*3+2] = b;
+    }
+    starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+    starGeometry.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
+    
+    const starTexture = (() => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 32;
+        canvas.height = 32;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = 'white';
+        ctx.arc(16, 16, 6, 0, 2*Math.PI);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,200,0.9)';
+        ctx.arc(16, 16, 3, 0, 2*Math.PI);
+        ctx.fill();
+        return new THREE.CanvasTexture(canvas);
+    })();
+    
+    const starField = new THREE.Points(starGeometry, new THREE.PointsMaterial({ size: 0.28, vertexColors: true, map: starTexture, transparent: true, blending: THREE.AdditiveBlending }));
+    scene.add(starField);
+    
+    const originalStarColors = starColors.slice();
+    starCountSpan.textContent = starCount.toLocaleString();
+    
+    // --- 2: Nebula and Auroras ---
+    const nebulaGeometry = new THREE.BufferGeometry();
+    const cloudCount = 2500;
+    const cloudPositions = new Float32Array(cloudCount * 3);
+    for (let i = 0; i < cloudCount; i++) {
+        const radius = 6 + Math.random() * 8;
+        const angle = Math.random() * Math.PI * 2;
+        const height = (Math.random() - 0.5) * 5;
+        cloudPositions[i*3] = Math.cos(angle) * radius;
+        cloudPositions[i*3+1] = height + Math.sin(angle * 3) * 1.5;
+        cloudPositions[i*3+2] = Math.sin(angle) * radius;
+    }
+    nebulaGeometry.setAttribute('position', new THREE.BufferAttribute(cloudPositions, 3));
+    const cloudMaterial = new THREE.PointsMaterial({ color: 0xaa66ff, size: 0.08, transparent: true, opacity: 0.25, blending: THREE.AdditiveBlending });
+    const nebulaHaze = new THREE.Points(nebulaGeometry, cloudMaterial);
+    scene.add(nebulaHaze);
+    
+    // Aurora ring
+    const ringPoints = [];
+    const ringRadius = 10.5;
+    for (let i = 0; i <= 360; i+= 3) {
+        const rad = i * Math.PI/180;
+        const x = Math.cos(rad) * ringRadius;
+        const z = Math.sin(rad) * ringRadius;
+        ringPoints.push(new THREE.Vector3(x, 0.9 + Math.sin(rad * 4) * 0.5, z));
+    }
+    const ringGeo = new THREE.BufferGeometry().setFromPoints(ringPoints);
+    const ringMat = new THREE.LineBasicMaterial({ color: 0xff77aa, transparent: true, opacity: 0.4 });
+    const auroraRing = new THREE.LineLoop(ringGeo, ringMat);
+    scene.add(auroraRing);
+    
+    // --- 3: Central Star ---
+    const coreGeo = new THREE.SphereGeometry(1.3, 128, 128);
+    const coreMat = new THREE.MeshStandardMaterial({ color: 0xffaa66, emissive: 0xff4411, emissiveIntensity: 1.2, metalness: 0.3 });
+    const coreStar = new THREE.Mesh(coreGeo, coreMat);
+    scene.add(coreStar);
+    const centralLight = new THREE.PointLight(0xffaa66, 1.3, 55);
+    centralLight.position.set(0, 0, 0);
+    scene.add(centralLight);
+    const ambientLight = new THREE.AmbientLight(0x221c30);
+    scene.add(ambientLight);
+    const fillLight = new THREE.DirectionalLight(0xccaa88, 0.6);
+    fillLight.position.set(1, 2, 1);
+    scene.add(fillLight);
+    
+    // --- 4: 12 PLANETS with detailed data ---
+    const planetsData = [
+        { name: "PYROS", radius: 0.36, distance: 2.5, speed: 0.0135, color: 0xdd6644, temp: 820, mass: 0.08, atmosphere: "CO₂, Thin", orbitalPeriod: 65, habitable: false },
+        { name: "AETHERIA", radius: 0.48, distance: 3.8, speed: 0.0092, color: 0x77aaff, temp: 520, mass: 0.22, atmosphere: "Toxic Sulfur", orbitalPeriod: 120, habitable: false },
+        { name: "VERDANTIA", radius: 0.62, distance: 5.2, speed: 0.0075, color: 0x66dd88, temp: 295, mass: 0.95, atmosphere: "N₂-O₂", orbitalPeriod: 210, habitable: true },
+        { name: "MAGMUS", radius: 0.55, distance: 6.9, speed: 0.0062, color: 0xcc7755, temp: 680, mass: 0.64, atmosphere: "Volcanic Ash", orbitalPeriod: 340, habitable: false },
+        { name: "GLACIEM", radius: 0.51, distance: 8.6, speed: 0.0051, color: 0x88bbff, temp: 145, mass: 0.71, atmosphere: "Methane Ice", orbitalPeriod: 530, habitable: false },
+        { name: "TITANUS", radius: 0.69, distance: 10.4, speed: 0.0043, color: 0xaa9977, temp: 110, mass: 1.2, atmosphere: "Hydrogen", orbitalPeriod: 780, habitable: false },
+        { name: "NEBULOS", radius: 0.66, distance: 12.5, speed: 0.0036, color: 0xaa88cc, temp: 85, mass: 1.1, atmosphere: "Helium", orbitalPeriod: 1050, habitable: false },
+        { name: "CRYSTALIS", radius: 0.58, distance: 14.8, speed: 0.0030, color: 0x88ccff, temp: 62, mass: 0.88, atmosphere: "Frozen Nitrogen", orbitalPeriod: 1420, habitable: false },
+        { name: "OBLIVION", radius: 0.79, distance: 17.4, speed: 0.0025, color: 0x8866aa, temp: 48, mass: 1.45, atmosphere: "Hydrogen", orbitalPeriod: 1850, habitable: false },
+        { name: "ELYSIUM", radius: 0.63, distance: 20.2, speed: 0.0021, color: 0x77ddcc, temp: 41, mass: 0.92, atmosphere: "Ice Particles", orbitalPeriod: 2350, habitable: false },
+        { name: "SOLARIUS", radius: 0.72, distance: 23.5, speed: 0.0017, color: 0xffaa77, temp: 35, mass: 1.05, atmosphere: "Hydrogen", orbitalPeriod: 2980, habitable: false },
+        { name: "TERMINUS", radius: 0.85, distance: 27.0, speed: 0.0014, color: 0x6699aa, temp: 28, mass: 1.35, atmosphere: "Frozen Methane", orbitalPeriod: 3650, habitable: false }
+    ];
+    
+    const planetMeshes = [];
+    const orbits = [];
+    
+    // Helper to create subtle label sprites
+    function createPlanetLabel(name) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 256;
+        canvas.height = 64;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = 'rgba(0,0,0,0.55)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.font = 'Bold 18px "Segoe UI"';
+        ctx.fillStyle = '#ffdd99';
+        ctx.textAlign = 'center';
+        ctx.fillText(name, canvas.width/2, 35);
+        const texture = new THREE.CanvasTexture(canvas);
+        const material = new THREE.SpriteMaterial({ map: texture, depthTest: false, transparent: true });
+        const sprite = new THREE.Sprite(material);
+        sprite.scale.set(1.0, 0.5, 1);
+        return sprite;
+    }
+    
+    planetsData.forEach((p, idx) => {
+        const geo = new THREE.SphereGeometry(p.radius, 96, 96);
+        const mat = new THREE.MeshStandardMaterial({ color: p.color, emissive: 0x331100, emissiveIntensity: 0.15, roughness: 0.5 });
+        const planet = new THREE.Mesh(geo, mat);
+        scene.add(planet);
+        
+        // Add floating label
+        const label = createPlanetLabel(p.name);
+        planet.add(label);
+        label.position.set(0, p.radius + 0.35, 0);
+        
+        // Orbit line (with slight tilt for realism)
+        const orbitPoints = [];
+        const seg = 160;
+        const tiltAmount = idx % 2 === 0 ? 0.1 : 0.2;
+        for (let i = 0; i <= seg; i++) {
+            const angle = (i / seg) * Math.PI * 2;
+            const x = Math.cos(angle) * p.distance;
+            const z = Math.sin(angle) * p.distance;
+            const y = Math.sin(angle * 2) * tiltAmount * 0.4;
+            orbitPoints.push(new THREE.Vector3(x, y, z));
+        }
+        const orbitGeo = new THREE.BufferGeometry().setFromPoints(orbitPoints);
+        const orbitMat = new THREE.LineBasicMaterial({ color: 0x77aaff, transparent: true, opacity: 0.3 });
+        const orbitLine = new THREE.LineLoop(orbitGeo, orbitMat);
+        scene.add(orbitLine);
+        
+        planetMeshes.push({ 
+            mesh: planet, 
+            distance: p.distance, 
+            speed: p.speed, 
+            angle: idx * 0.9, 
+            tilt: tiltAmount,
+            data: p,
+            label: label
+        });
+        orbits.push(orbitLine);
+    });
+    
+    // --- 5: Dust particles for ambiance ---
+    const dustCount = 2000;
+    const dustGeo = new THREE.BufferGeometry();
+    const dustPositions = new Float32Array(dustCount * 3);
+    for (let i = 0; i < dustCount; i++) {
+        const rad = 3 + Math.random() * 18;
+        const ang = Math.random() * Math.PI * 2;
+        const yOff = (Math.random() - 0.5) * 4;
+        dustPositions[i*3] = Math.cos(ang) * rad;
+        dustPositions[i*3+1] = yOff;
+        dustPositions[i*3+2] = Math.sin(ang) * rad;
+    }
+    dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPositions, 3));
+    const dustMat = new THREE.PointsMaterial({ color: 0xffcc99, size: 0.05, transparent: true, blending: THREE.AdditiveBlending });
+    const dustRing = new THREE.Points(dustGeo, dustMat);
+    scene.add(dustRing);
+    
+    // Tiny sparkle particles
+    const sparkleCount = 1500;
+    const sparkleGeo = new THREE.BufferGeometry();
+    const sparklePos = [];
+    for (let i = 0; i < sparkleCount; i++) {
+        const rad = 4.5;
+        const ang = Math.random() * Math.PI * 2;
+        const yoff = (Math.random() - 0.5) * 3;
+        sparklePos.push(Math.cos(ang)*rad, yoff, Math.sin(ang)*rad);
+    }
+    sparkleGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(sparklePos), 3));
+    const sparkleMat = new THREE.PointsMaterial({ color: 0xffaa88, size: 0.045, blending: THREE.AdditiveBlending });
+    const sparkleField = new THREE.Points(sparkleGeo, sparkleMat);
+    scene.add(sparkleField);
+    
+    // --- 6: Raycaster for planet clicking ---
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    
+    renderer.domElement.addEventListener('click', (event) => {
+        const rect = renderer.domElement.getBoundingClientRect();
+        mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+        raycaster.setFromCamera(mouse, camera);
+        const planetObjects = planetMeshes.map(p => p.mesh);
+        const intersects = raycaster.intersectObjects(planetObjects);
+        if (intersects.length > 0) {
+            const hit = intersects[0].object;
+            const planetData = planetMeshes.find(p => p.mesh === hit);
+            if (planetData) {
+                showPlanetInfo(planetData.data);
+            }
+        } else {
+            resetToDefaultInfo();
+        }
+    });
+    
+    // --- 7: Animation & Twinkle ---
+    let timeAcc = 0;
+    function updateStarTwinkle() {
+        if (!starTwinkleEnabled) {
+            const colorsAttr = starGeometry.attributes.color.array;
+            for (let i = 0; i < starCount * 3; i++) colorsAttr[i] = originalStarColors[i];
+            starGeometry.attributes.color.needsUpdate = true;
+            return;
+        }
+        const colorsAttr = starGeometry.attributes.color.array;
+        const twinkleFactor = 0.55 + Math.sin(timeAcc * 3.5) * 0.2;
+        for (let i = 0; i < starCount; i++) {
+            const baseR = originalStarColors[i*3];
+            const baseG = originalStarColors[i*3+1];
+            const baseB = originalStarColors[i*3+2];
+            const variation = 0.6 + Math.sin(timeAcc * 2.2 + i * 0.0018) * 0.35;
+            colorsAttr[i*3] = Math.min(1.0, baseR * variation * twinkleFactor);
+            colorsAttr[i*3+1] = Math.min(1.0, baseG * variation * (twinkleFactor + 0.1));
+            colorsAttr[i*3+2] = Math.min(1.0, baseB * variation * (twinkleFactor + 0.15));
+        }
+        starGeometry.attributes.color.needsUpdate = true;
+    }
+    
+    // UI Button handlers
+    let autoRotateFlag = true;
+    autoBtn.addEventListener('click', () => {
+        controls.autoRotate = !controls.autoRotate;
+        autoBtn.style.background = controls.autoRotate ? "#ffaa55cc" : "rgba(30,45,70,0.8)";
+        autoBtn.style.color = controls.autoRotate ? "#0a0f1f" : "#ffecb3";
+    });
+    resetBtn.addEventListener('click', () => {
+        camera.position.set(18, 8, 24);
+        controls.target.set(0, 0.5, 0);
+        controls.update();
+        resetToDefaultInfo();
+    });
+    toggleStarsBtn.addEventListener('click', () => {
+        starTwinkleEnabled = !starTwinkleEnabled;
+        toggleStarsBtn.style.background = starTwinkleEnabled ? "#ffaa55cc" : "rgba(30,45,70,0.8)";
+    });
+    autoBtn.style.background = "#ffaa55cc";
+    autoBtn.style.color = "#0a0f1f";
+    
+    let pulse = 0;
+    let lastTimestamp = 0;
+    
+    function animate(time) {
+        const delta = Math.min(0.033, (time - lastTimestamp) / 1000);
+        lastTimestamp = time;
+        timeAcc += delta;
+        
+        updateStarTwinkle();
+        
+        // Rotate nebulae and dust
+        nebulaHaze.rotation.y += 0.0012;
+        nebulaHaze.rotation.x = Math.sin(time * 0.0008) * 0.1;
+        dustRing.rotation.y += 0.002;
+        sparkleField.rotation.y += 0.0015;
+        auroraRing.rotation.y += 0.0018;
+        auroraRing.rotation.x = Math.sin(time * 0.0015) * 0.15;
+        
+        // Animate planets
+        planetMeshes.forEach(p => {
+            p.angle += p.speed * (delta * 60);
+            if (p.angle > Math.PI * 2) p.angle -= Math.PI * 2;
+            const x = Math.cos(p.angle) * p.distance;
+            const z = Math.sin(p.angle) * p.distance;
+            const y = Math.sin(p.angle * 2) * p.tilt * 0.5;
+            p.mesh.position.set(x, y, z);
+            p.mesh.rotation.y += 0.015;
+        });
+        
+        // Central star pulsation
+        pulse += delta * 3.5;
+        const intensity = 0.9 + Math.sin(pulse) * 0.4;
+        centralLight.intensity = intensity * 1.2;
+        coreMat.emissiveIntensity = 0.7 + Math.sin(pulse * 1.8) * 0.5;
+        
+        controls.update();
+        effectComposer.render();
+        requestAnimationFrame(animate);
+    }
+    
+    // Initialize angles
+    planetMeshes.forEach((p, idx) => { p.angle = idx * 0.85; });
+    
+    requestAnimationFrame(animate);
+    
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        effectComposer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+    
+    console.log('🌌 AstralView with 12 Planets — Click any planet for deep info!');
+</script>
+</body>
+</html>
